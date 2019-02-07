@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using LuckySpin.Models;
+using LuckySpin.ViewModels;
 
 namespace LuckySpin.Controllers
 {
@@ -15,10 +16,12 @@ namespace LuckySpin.Controllers
         /***
          * Controller Constructor
          */
-        public SpinnerController()
+        public SpinnerController(LuckySpinDataContext luckySpinDataContext)
         {
             random = new Random();
             //TODO: Inject the LuckySpinDataContext
+            _dbc = luckySpinDataContext;
+
         }
 
         /***
@@ -37,40 +40,46 @@ namespace LuckySpin.Controllers
             if (!ModelState.IsValid) { return View(); }
 
             // TODO: Add the Player to the DB and save the changes
+            _dbc.Players.Add(player);
+            _dbc.SaveChanges();
 
             // TODO: BONUS: Build a new SpinItViewModel object with data from the Player and pass it to the View
+            SpinViewModel svm = new SpinViewModel();
+            svm.Name = player.FirstName;
+            svm.Luck = player.Luck;
+            svm.Balance = player.Balance;
 
-            return RedirectToAction("SpinIt");
+            return RedirectToAction("SpinIt", svm);
         }
 
         /***
          * Spin Action
          **/  
                
-         public IActionResult SpinIt()
+         public IActionResult SpinIt(SpinViewModel svm)
         {
-            Spin spin = new Spin
-            {
-                //Luck = player.Luck,
-                A = random.Next(1, 10),
-                B = random.Next(1, 10),
-                C = random.Next(1, 10)
-            };
+            svm.A = random.Next(1, 10);
+            svm.B = random.Next(1, 10);
+            svm.C = random.Next(1, 10);
 
-            spin.IsWinning = (spin.A == spin.Luck || spin.B == spin.Luck || spin.C == spin.Luck);
+            svm.IsWinning = (svm.A == svm.Luck || svm.B == svm.Luck || svm.C == svm.Luck);
+            Spin spin = new Spin();
+            spin.IsWinning = svm.IsWinning;
 
             //Add to Spin Repository
+            _dbc.Spins.Add(spin);
+            _dbc.SaveChanges();
             //repository.AddSpin(spin);
 
             //Prepare the View
-            if(spin.IsWinning)
+            if (svm.IsWinning)
                 ViewBag.Display = "block";
             else
                 ViewBag.Display = "none";
 
             //ViewBag.FirstName = player.FirstName;
 
-            return View("SpinIt", spin);
+            return View("SpinIt", svm);
         }
 
         /***

@@ -10,5 +10,8 @@ namespace LuckySpin.Models
 
         [Range(1,9, ErrorMessage = "Choose a number")]
         public int Luck { get; set; }
+
+        [Required(ErrorMessage = "Please enter your balance")]
+        public decimal Balance { get; set; }
     }
 }
